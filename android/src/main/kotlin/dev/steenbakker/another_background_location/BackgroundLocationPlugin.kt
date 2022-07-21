@@ -1,4 +1,4 @@
-package dev.steenbakker.background_location
+package dev.steenbakker.another_background_location
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding

@@ -41,7 +41,7 @@
             android:windowSoftInputMode="adjustResize">
         </activity>
 
-        <service android:name="dev.steenbakker.background_location.LocationUpdatesService" android:foregroundServiceType="location" />
+        <service android:name="dev.steenbakker.another_background_location.LocationUpdatesService" android:foregroundServiceType="location" />
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

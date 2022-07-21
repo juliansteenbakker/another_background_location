@@ -1,4 +1,4 @@
-package dev.steenbakker.background_location
+package dev.steenbakker.another_background_location
 
 import android.Manifest
 import io.flutter.plugin.common.MethodChannel
@@ -14,7 +14,7 @@ import android.widget.Toast
 import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import dev.steenbakker.background_location.R
+import dev.steenbakker.another_background_location.R
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 
 import io.flutter.plugin.common.MethodCall

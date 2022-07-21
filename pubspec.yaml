@@ -22,7 +22,7 @@ flutter:
   plugin:
     platforms:
       android:
-        package: dev.steenbakker.background_location
+        package: dev.steenbakker.another_background_location
         pluginClass: BackgroundLocationPlugin
       ios:
         pluginClass: BackgroundLocationPlugin

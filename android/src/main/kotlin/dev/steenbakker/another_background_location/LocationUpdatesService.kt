@@ -1,4 +1,4 @@
-package dev.steenbakker.background_location
+package dev.steenbakker.another_background_location
 
 import android.annotation.SuppressLint
 import android.app.*

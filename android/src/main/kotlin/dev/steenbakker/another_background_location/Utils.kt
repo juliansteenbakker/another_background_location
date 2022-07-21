@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package dev.steenbakker.background_location
+package dev.steenbakker.another_background_location
 
 
 import android.content.Context

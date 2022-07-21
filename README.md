@@ -8,7 +8,7 @@ A Flutter plugin to get location updates in the background for both Android and 
 
 ```yaml
 dependencies:
-  background_location: ^0.8.1
+  another_background_location: ^0.8.1
 ```
 
 **2:** Install packages from the command line:
@@ -24,7 +24,7 @@ Alternatively, your editor might support flutter packages get. Check the docs fo
 Import the package where you wanna use it.
 
 ```dart
-import 'package:background_location/background_location.dart';
+import 'package:another_background_location/background_location.dart';
 ```
 
 Request permissions from the user. You can use [permission_handler](https://pub.dev/packages/permission_handler) for this
