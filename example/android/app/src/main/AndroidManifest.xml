@@ -33,13 +33,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity
-            android:name="dev.steenbakker.background_location_example.EmbeddingV1Activity"
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|fontScale"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
-        </activity>
 
         <service android:name="dev.steenbakker.another_background_location.LocationUpdatesService" android:foregroundServiceType="location" />
         <meta-data
