@@ -8,6 +8,7 @@ import android.app.Activity
 import android.content.*
 import android.content.pm.PackageManager
 import android.location.Location
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
@@ -20,25 +21,11 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.PluginRegistry
 
 
-class BackgroundLocationService: MethodChannel.MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
+class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
     companion object {
         const val METHOD_CHANNEL_NAME = "${BackgroundLocationPlugin.PLUGIN_ID}/methods"
         private const val REQUEST_PERMISSIONS_REQUEST_CODE = 34
-
-        private var instance: BackgroundLocationService? = null
-
-        /**
-         * Requests the singleton instance of [BackgroundLocationService] or creates it,
-         * if it does not yet exist.
-         */
-        fun getInstance(): BackgroundLocationService {
-            if (instance == null) {
-                instance = BackgroundLocationService()
-            }
-            return instance!!
-        }
     }
-
 
     /**
      * Context that is set once attached to a FlutterEngine.
@@ -60,7 +47,7 @@ class BackgroundLocationService: MethodChannel.MethodCallHandler, PluginRegistry
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
             bound = true
             val binder = service as LocationUpdatesService.LocalBinder
-            this@BackgroundLocationService.service = binder.service
+            this@BackgroundLocationManager.service = binder.service
             requestLocation()
         }
 
@@ -199,7 +186,12 @@ class BackgroundLocationService: MethodChannel.MethodCallHandler, PluginRegistry
 
     private inner class MyReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            val location = intent.getParcelableExtra<Location>(LocationUpdatesService.EXTRA_LOCATION)
+            val location: Location? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION, Location::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION)
+            }
             if (location != null) {
                 val locationMap = HashMap<String, Any>()
                 locationMap["latitude"] = location.latitude
@@ -209,7 +201,12 @@ class BackgroundLocationService: MethodChannel.MethodCallHandler, PluginRegistry
                 locationMap["bearing"] = location.bearing.toDouble()
                 locationMap["speed"] = location.speed.toDouble()
                 locationMap["time"] = location.time.toDouble()
-                locationMap["is_mock"] = location.isFromMockProvider
+                locationMap["is_mock"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    location.isMock
+                } else {
+                    @Suppress("DEPRECATION")
+                    location.isFromMockProvider
+                }
                 channel.invokeMethod("location", locationMap, null)
             }
         }

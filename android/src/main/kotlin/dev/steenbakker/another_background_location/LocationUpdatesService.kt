@@ -1,6 +1,5 @@
 package dev.steenbakker.another_background_location
 
-import android.annotation.SuppressLint
 import android.app.*
 import android.location.*
 import android.location.LocationListener
@@ -64,7 +63,6 @@ class LocationUpdatesService : Service() {
 
 
     private val notification: NotificationCompat.Builder
-        @SuppressLint("UnspecifiedImmutableFlag")
         get() {
 
             val intent = Intent(this, getMainActivityClass(this))

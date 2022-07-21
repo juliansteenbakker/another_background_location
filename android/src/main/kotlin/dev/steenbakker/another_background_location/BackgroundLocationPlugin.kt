@@ -4,41 +4,42 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.PluginRegistry
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.MethodChannel
 
 
 class BackgroundLocationPlugin : FlutterPlugin, ActivityAware {
+    private var flutter: FlutterPluginBinding? = null
+    private var activity: ActivityPluginBinding? = null
+    private var manager: BackgroundLocationManager = BackgroundLocationManager()
+    private var method: MethodChannel? = null
+    private var event: EventChannel? = null
 
     companion object {
-
-        /**
-        Legacy for v1 embedding
-         */
-        @SuppressWarnings("deprecation")
-        fun registerWith(registrar: PluginRegistry.Registrar) {
-            val service = BackgroundLocationService.getInstance()
-            service.onAttachedToEngine(registrar.context(), registrar.messenger())
-            registrar.addRequestPermissionsResultListener(service)
-        }
-
         const val TAG = "dev.steenbakker.Log.Tag"
         const val PLUGIN_ID = "dev.steenbakker.background_location"
     }
 
 
     override fun onAttachedToEngine(binding: FlutterPluginBinding) {
-        BackgroundLocationService.getInstance()
-            .onAttachedToEngine(binding.applicationContext, binding.binaryMessenger)
+        manager.onAttachedToEngine(binding.applicationContext, binding.binaryMessenger)
     }
 
     override fun onDetachedFromEngine(binding: FlutterPluginBinding) {
-        BackgroundLocationService.getInstance().onDetachedFromEngine()
+        manager.onDetachedFromEngine()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        val service = BackgroundLocationService.getInstance()
-        service.setActivity(binding)
-        binding.addRequestPermissionsResultListener(service)
+        activity = binding
+//        handler = MobileScanner(activity!!.activity, flutter!!.textureRegistry)
+        method = MethodChannel(flutter!!.binaryMessenger, "dev.steenbakker.mobile_scanner/scanner/method")
+        event = EventChannel(flutter!!.binaryMessenger, "dev.steenbakker.mobile_scanner/scanner/event")
+//        method!!.setMethodCallHandler(handler)
+//        event!!.setStreamHandler(handler)
+//        activity!!.addRequestPermissionsResultListener(handler!!)
+
+        manager.setActivity(binding)
+        binding.addRequestPermissionsResultListener(manager)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -50,7 +51,7 @@ class BackgroundLocationPlugin : FlutterPlugin, ActivityAware {
     }
 
     override fun onDetachedFromActivity() {
-        BackgroundLocationService.getInstance().setActivity(null)
+        manager.setActivity(null)
     }
 
 }
