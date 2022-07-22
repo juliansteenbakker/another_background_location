@@ -1,3 +1,11 @@
+## 1.0.0
+Initial fork from background_location.
+Required Flutter version is 3 and greater.
+Other changes made:
+* Fixes for the latest Flutter version
+* Upgraded dependencies for Android and iOS
+* 
+
 ### 0.8.1
 Bug Fixes
 

@@ -1,12 +1,12 @@
 name: another_background_location
 description: Fork of background_location. A Flutter plugin to get location updates in the background for both Android and iOS.
-version: 0.8.1
+version: 1.0.0
 homepage: https://github.com/juliansteenbakker/another_background_location
 repository: https://github.com/juliansteenbakker/another_background_location
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
-  flutter: ">=1.17.0"
+  sdk: '>=2.17.0 <3.0.0'
+  flutter: ">=3.0.0"
 
 dependencies:
   flutter:
@@ -15,7 +15,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  #test: ^1.16.8
   pedantic: ^1.11.0
 
 flutter:

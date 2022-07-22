@@ -1,5 +1,6 @@
 package dev.steenbakker.another_background_location
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.location.*
 import android.location.LocationListener
@@ -63,6 +64,7 @@ class LocationUpdatesService : Service() {
 
 
     private val notification: NotificationCompat.Builder
+        @SuppressLint("DiscouragedApi", "UnspecifiedImmutableFlag")
         get() {
 
             val intent = Intent(this, getMainActivityClass(this))
@@ -175,7 +177,12 @@ class LocationUpdatesService : Service() {
     }
 
     fun removeLocationUpdates() {
-        stopForeground(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
         stopSelf()
     }
 
@@ -205,11 +212,12 @@ class LocationUpdatesService : Service() {
 
 
     private fun createLocationRequest(distanceFilter: Double) {
-        mLocationRequest = LocationRequest()
-        mLocationRequest!!.interval = UPDATE_INTERVAL_IN_MILLISECONDS
-        mLocationRequest!!.fastestInterval = FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS
-        mLocationRequest!!.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        mLocationRequest!!.smallestDisplacement = distanceFilter.toFloat()
+        mLocationRequest = LocationRequest.create().apply {
+            interval = UPDATE_INTERVAL_IN_MILLISECONDS
+            fastestInterval = FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS
+            priority = Priority.PRIORITY_HIGH_ACCURACY
+            smallestDisplacement = distanceFilter.toFloat()
+        }
     }
 
 

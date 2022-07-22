@@ -9,11 +9,8 @@ import io.flutter.plugin.common.MethodChannel
 
 
 class BackgroundLocationPlugin : FlutterPlugin, ActivityAware {
-    private var flutter: FlutterPluginBinding? = null
     private var activity: ActivityPluginBinding? = null
     private var manager: BackgroundLocationManager = BackgroundLocationManager()
-    private var method: MethodChannel? = null
-    private var event: EventChannel? = null
 
     companion object {
         const val TAG = "dev.steenbakker.Log.Tag"
@@ -31,13 +28,6 @@ class BackgroundLocationPlugin : FlutterPlugin, ActivityAware {
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding
-//        handler = MobileScanner(activity!!.activity, flutter!!.textureRegistry)
-        method = MethodChannel(flutter!!.binaryMessenger, "dev.steenbakker.mobile_scanner/scanner/method")
-        event = EventChannel(flutter!!.binaryMessenger, "dev.steenbakker.mobile_scanner/scanner/event")
-//        method!!.setMethodCallHandler(handler)
-//        event!!.setStreamHandler(handler)
-//        activity!!.addRequestPermissionsResultListener(handler!!)
-
         manager.setActivity(binding)
         binding.addRequestPermissionsResultListener(manager)
     }

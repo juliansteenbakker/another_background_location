@@ -22,6 +22,7 @@ import io.flutter.plugin.common.PluginRegistry
 
 
 class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
+
     companion object {
         const val METHOD_CHANNEL_NAME = "${BackgroundLocationPlugin.PLUGIN_ID}/methods"
         private const val REQUEST_PERMISSIONS_REQUEST_CODE = 34
@@ -32,9 +33,10 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
      * Context should no longer be referenced when detached.
      */
     private var context: Context? = null
-    private lateinit var channel: MethodChannel
     private var activity: Activity? = null
-    private var isAttached = false
+
+
+    private lateinit var channel: MethodChannel
     private var receiver: MyReceiver? = null
     private var service: LocationUpdatesService? = null
 
@@ -58,7 +60,6 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
 
     fun onAttachedToEngine(@NonNull context: Context, @NonNull messenger: BinaryMessenger) {
         this.context = context
-        isAttached = true
         channel = MethodChannel(messenger, METHOD_CHANNEL_NAME)
         channel.setMethodCallHandler(this)
 
@@ -71,7 +72,6 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
     fun onDetachedFromEngine() {
         channel.setMethodCallHandler(null)
         context = null
-        isAttached = false
     }
 
     fun setActivity(binding: ActivityPluginBinding?) {
@@ -166,15 +166,12 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
      * Depending on the current activity, displays a rationale for the request.
      */
     private fun requestPermissions() {
-        if(activity == null) {
-            return
-        }
+        if(activity == null) return
 
         val shouldProvideRationale = ActivityCompat.shouldShowRequestPermissionRationale(activity!!, Manifest.permission.ACCESS_FINE_LOCATION)
         if (shouldProvideRationale) {
             Log.i(BackgroundLocationPlugin.TAG, "Displaying permission rationale to provide additional context.")
             Toast.makeText(context, R.string.permission_rationale, Toast.LENGTH_LONG).show()
-
         } else {
             Log.i(BackgroundLocationPlugin.TAG, "Requesting permission")
             ActivityCompat.requestPermissions(activity!!,

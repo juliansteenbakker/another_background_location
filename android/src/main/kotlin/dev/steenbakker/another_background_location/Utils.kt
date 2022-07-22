@@ -22,7 +22,7 @@ import android.content.Context
 internal object Utils {
 
     private const val KEY_REQUESTING_LOCATION_UPDATES = "requesting_location_updates"
-    private const val SHARED_PREFERENCES_FILE = "${BackgroundLocationPlugin.PLUGIN_ID}_preferences"
+    private const val SHARED_PREFERENCES_FILE = "${BackgroundLocationPlugin.TAG}_preferences"
 
 
     fun requestingLocationUpdates(context: Context): Boolean {
