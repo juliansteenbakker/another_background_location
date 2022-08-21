@@ -2,18 +2,19 @@ package dev.steenbakker.another_background_location
 
 import android.annotation.SuppressLint
 import android.app.*
-import android.location.*
-import android.location.LocationListener
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.location.*
+import android.location.LocationListener
 import android.os.*
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.google.android.gms.common.*
 import com.google.android.gms.location.*
 import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.common.*
+
 
 class LocationUpdatesService : Service() {
 
@@ -122,7 +123,7 @@ class LocationUpdatesService : Service() {
             }
         }
 
-        getLastLocation()
+//        getLastLocation()
 
         val handlerThread = HandlerThread(TAG)
         handlerThread.start()
@@ -157,12 +158,25 @@ class LocationUpdatesService : Service() {
         try {
             if (isGoogleApiAvailable && !this.forceLocationManager) {
                 mFusedLocationClient!!.requestLocationUpdates(mLocationRequest!!,
-                    mFusedLocationCallback!!, Looper.myLooper())
+                    mFusedLocationCallback!!, null)
             } else {
                 mLocationManager?.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0L, 0f, mLocationManagerCallback!!)
             }
         } catch (unlikely: SecurityException) {
             Utils.setRequestingLocationUpdates(this, false)
+        }
+    }
+
+
+    fun getCurrentLocation(): Location? {
+        return try {
+            if (isGoogleApiAvailable && !this.forceLocationManager) {
+                mFusedLocationClient!!.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).result
+            } else {
+                mLocationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+            }
+        } catch (unlikely: SecurityException) {
+            null
         }
     }
 

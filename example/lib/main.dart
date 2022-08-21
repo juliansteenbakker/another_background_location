@@ -1,4 +1,4 @@
-import 'package:another_background_location/background_location.dart';
+import 'package:another_background_location/another_background_location.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(MyApp());
@@ -9,6 +9,8 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  Location? retrievedLocation;
+
   String latitude = 'waiting...';
   String longitude = 'waiting...';
   String altitude = 'waiting...';
@@ -32,24 +34,58 @@ class _MyAppState extends State<MyApp> {
         body: Center(
           child: ListView(
             children: <Widget>[
-              locationData('Latitude: ' + latitude),
-              locationData('Longitude: ' + longitude),
-              locationData('Altitude: ' + altitude),
-              locationData('Accuracy: ' + accuracy),
-              locationData('Bearing: ' + bearing),
-              locationData('Speed: ' + speed),
-              locationData('Time: ' + time),
+              Text('STREAM INFO: '),
+              StreamBuilder(
+                stream: BackgroundLocation().onLocationUpdate,
+                // initialData: PeripheralState.unknown,
+                builder:
+                    (BuildContext context, AsyncSnapshot<Location> snapshot) {
+                  if (snapshot.hasData) {
+                    return Column(
+                      children: [
+                        locationData('Latitude: ${snapshot.data!.latitude}'),
+                        locationData('Longitude: ${snapshot.data!.longitude}'),
+                        locationData('Altitude: ${snapshot.data!.altitude}'),
+                        locationData('Accuracy: ${snapshot.data!.accuracy}'),
+                        locationData('Bearing: ${snapshot.data!.bearing}'),
+                        locationData('Speed: ${snapshot.data!.speed}'),
+                        locationData('Time: ${snapshot.data!.time}'),
+                      ],
+                    );
+                  } else {
+                    return Text('No data received yet!');
+                  }
+
+                },
+              ),
+
+              Text('Callback INFO: '),
+              locationData('Latitude: $latitude'),
+              locationData('Longitude: $longitude'),
+              locationData('Altitude: $altitude'),
+              locationData('Accuracy: $accuracy'),
+              locationData('Bearing: $bearing'),
+              locationData('Speed: $speed'),
+              locationData('Time: $time'),
+
+              Text('Onclick INFO: '),
+              locationData('Latitude: ${retrievedLocation?.latitude}'),
+              locationData('Longitude: ${retrievedLocation?.longitude}'),
+              locationData('Altitude: ${retrievedLocation?.altitude}'),
+              locationData('Accuracy: ${retrievedLocation?.accuracy}'),
+              locationData('Bearing: ${retrievedLocation?.bearing}'),
+              locationData('Speed: ${retrievedLocation?.speed}'),
+              locationData('Time: ${retrievedLocation?.time}'),
               ElevatedButton(
                   onPressed: () async {
-                    await BackgroundLocation.setAndroidNotification(
+                    await BackgroundLocation().setAndroidNotification(
                       title: 'Background service is running',
                       message: 'Background location in progress',
                       icon: '@mipmap/ic_launcher',
                     );
                     //await BackgroundLocation.setAndroidConfiguration(1000);
-                    await BackgroundLocation.startLocationService(
-                        distanceFilter: 20);
-                    BackgroundLocation.getLocationUpdates((location) {
+                    await BackgroundLocation.startLocationService();
+                    BackgroundLocation().getLocationUpdates((location) {
                       setState(() {
                         latitude = location.latitude.toString();
                         longitude = location.longitude.toString();
@@ -75,12 +111,15 @@ class _MyAppState extends State<MyApp> {
                   child: Text('Start Location Service')),
               ElevatedButton(
                   onPressed: () {
-                    BackgroundLocation.stopLocationService();
+                    BackgroundLocation().stopLocationService();
                   },
                   child: Text('Stop Location Service')),
               ElevatedButton(
-                  onPressed: () {
-                    getCurrentLocation();
+                  onPressed: () async {
+                    final location = await BackgroundLocation().getCurrentLocation();
+                    setState(() {
+                      retrievedLocation = location;
+                    });
                   },
                   child: Text('Get Current Location')),
             ],
@@ -101,15 +140,9 @@ class _MyAppState extends State<MyApp> {
     );
   }
 
-  void getCurrentLocation() {
-    BackgroundLocation().getCurrentLocation().then((location) {
-      print('This is current Location ' + location.toMap().toString());
-    });
-  }
-
   @override
   void dispose() {
-    BackgroundLocation.stopLocationService();
+    BackgroundLocation().stopLocationService();
     super.dispose();
   }
 }

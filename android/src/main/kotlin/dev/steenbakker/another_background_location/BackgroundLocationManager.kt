@@ -1,10 +1,9 @@
 package dev.steenbakker.another_background_location
 
 import android.Manifest
-import io.flutter.plugin.common.MethodChannel
 
-import io.flutter.plugin.common.BinaryMessenger
 import android.app.Activity
+import android.bluetooth.BluetoothAdapter
 import android.content.*
 import android.content.pm.PackageManager
 import android.location.Location
@@ -16,28 +15,23 @@ import androidx.annotation.NonNull
 import androidx.core.app.ActivityCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-
-import io.flutter.plugin.common.MethodCall
-import io.flutter.plugin.common.PluginRegistry
+import io.flutter.plugin.common.*
 
 
-class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry.RequestPermissionsResultListener {
+class BackgroundLocationManager(private val context: Context, val locationUpdateHandler: LocationUpdateHandler) {
 
     companion object {
         const val METHOD_CHANNEL_NAME = "${BackgroundLocationPlugin.PLUGIN_ID}/methods"
-        private const val REQUEST_PERMISSIONS_REQUEST_CODE = 34
+        internal const val REQUEST_PERMISSIONS_REQUEST_CODE = 34
     }
 
     /**
      * Context that is set once attached to a FlutterEngine.
      * Context should no longer be referenced when detached.
      */
-    private var context: Context? = null
-    private var activity: Activity? = null
+    var activity: Activity? = null
 
-
-    private lateinit var channel: MethodChannel
-    private var receiver: MyReceiver? = null
+    private val receiver: MyReceiver = MyReceiver()
     private var service: LocationUpdatesService? = null
 
     /**
@@ -58,62 +52,32 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
         }
     }
 
-    fun onAttachedToEngine(@NonNull context: Context, @NonNull messenger: BinaryMessenger) {
-        this.context = context
-        channel = MethodChannel(messenger, METHOD_CHANNEL_NAME)
-        channel.setMethodCallHandler(this)
-
-        receiver = MyReceiver()
-
-        LocalBroadcastManager.getInstance(context).registerReceiver(receiver!!,
-                IntentFilter(LocationUpdatesService.ACTION_BROADCAST))
-    }
-
-    fun onDetachedFromEngine() {
-        channel.setMethodCallHandler(null)
-        context = null
-    }
-
-    fun setActivity(binding: ActivityPluginBinding?) {
-        this.activity = binding?.activity
-
-        if(this.activity != null){
-            if (Utils.requestingLocationUpdates(context!!)) {
-                if (!checkPermissions()) {
-                    requestPermissions()
-                }
-            }
-        } else {
-            stopLocationService()
-        }
-    }
-
-    private fun startLocationService(distanceFilter: Double?, forceLocationManager : Boolean?): Int{
-        LocalBroadcastManager.getInstance(context!!).registerReceiver(receiver!!,
-                IntentFilter(LocationUpdatesService.ACTION_BROADCAST))
+    fun startLocationService(result: MethodChannel.Result, distanceFilter: Double?, forceLocationManager : Boolean?) {
+        LocalBroadcastManager.getInstance(context).registerReceiver(receiver,
+            IntentFilter(LocationUpdatesService.ACTION_BROADCAST))
         if (!bound) {
             val intent = Intent(context, LocationUpdatesService::class.java)
             intent.putExtra("distance_filter", distanceFilter)
             intent.putExtra("force_location_manager", forceLocationManager)
-            context!!.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
 
-        return 0
+        result.success(null)
     }
 
-    private fun stopLocationService(): Int {
+    fun stopLocationService(result: MethodChannel.Result,) {
         service?.removeLocationUpdates()
-        LocalBroadcastManager.getInstance(context!!).unregisterReceiver(receiver!!)
+        LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
 
         if (bound) {
-            context!!.unbindService(serviceConnection)
+            context.unbindService(serviceConnection)
             bound = false
         }
 
-        return 0
+        result.success(null)
     }
 
-    private fun setAndroidNotification(title: String?, message: String?, icon: String?):Int{
+    fun setAndroidNotification(result: MethodChannel.Result, title: String?, message: String?, icon: String?) {
         if (title != null) LocationUpdatesService.NOTIFICATION_TITLE = title
         if (message != null) LocationUpdatesService.NOTIFICATION_MESSAGE = message
         if (icon != null) LocationUpdatesService.NOTIFICATION_ICON = icon
@@ -122,23 +86,13 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
             service?.updateNotification()
         }
 
-        return 0
+        result.success(null)
     }
 
-    private fun setConfiguration(timeInterval: Long?):Int {
+    fun setConfiguration(result: MethodChannel.Result, timeInterval: Long?) {
         if (timeInterval != null) LocationUpdatesService.UPDATE_INTERVAL_IN_MILLISECONDS = timeInterval
 
-        return 0
-    }
-
-    override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
-        when (call.method) {
-            "stop_location_service" -> result.success(stopLocationService())
-            "start_location_service" -> result.success(startLocationService(call.argument("distance_filter"), call.argument("force_location_manager")))
-            "set_android_notification" -> result.success(setAndroidNotification(call.argument("title"),call.argument("message"),call.argument("icon")))
-            "set_configuration" -> result.success(setConfiguration(call.argument<String>("interval")?.toLongOrNull()))
-            else -> result.notImplemented()
-        }
+        result.success(null)
     }
 
     /**
@@ -154,12 +108,46 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
     }
 
     /**
+     * Requests a location updated.
+     * If permission is denied, it requests the needed permission
+     */
+    fun requestCurrentLocation(result: MethodChannel.Result) {
+        if (!checkPermissions()) {
+            requestPermissions()
+        } else {
+            val location = service?.getCurrentLocation()
+            if (location == null) {
+                result.error("Location Failed", "Could not get location.", null)
+            } else {
+                result.success(locationToMap(location))
+            }
+        }
+    }
+
+    private fun locationToMap(location: Location): Map<String, Any> {
+        val locationMap = HashMap<String, Any>()
+        locationMap["latitude"] = location.latitude
+        locationMap["longitude"] = location.longitude
+        locationMap["altitude"] = location.altitude
+        locationMap["accuracy"] = location.accuracy.toDouble()
+        locationMap["bearing"] = location.bearing.toDouble()
+        locationMap["speed"] = location.speed.toDouble()
+        locationMap["time"] = location.time.toDouble()
+        locationMap["is_mock"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            location.isMock
+        } else {
+            @Suppress("DEPRECATION")
+            location.isFromMockProvider
+        }
+        return locationMap
+    }
+
+    /**
      * Checks the current permission for `ACCESS_FINE_LOCATION`
      */
     private fun checkPermissions(): Boolean {
-        return PackageManager.PERMISSION_GRANTED == ActivityCompat.checkSelfPermission(context!!, Manifest.permission.ACCESS_FINE_LOCATION)
+        return ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
-
 
     /**
      * Requests permission for location.
@@ -175,11 +163,33 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
         } else {
             Log.i(BackgroundLocationPlugin.TAG, "Requesting permission")
             ActivityCompat.requestPermissions(activity!!,
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                    REQUEST_PERMISSIONS_REQUEST_CODE
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                REQUEST_PERMISSIONS_REQUEST_CODE
             )
         }
     }
+
+    /**
+     * Enables bluetooth with a dialog or without.
+     */
+//    fun enableBluetooth(call: MethodCall, result: MethodChannel.Result, activityBinding: ActivityPluginBinding) {
+//        if (mBluetoothManager!!.adapter.isEnabled) {
+//            result.success(true)
+//        } else {
+//            if (call.arguments as Boolean) {
+//                pendingResultForActivityResult = result
+//                val intent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+//                ActivityCompat.startActivityForResult(
+//                    activityBinding.activity,
+//                    intent,
+//                    requestEnableBt,
+//                    null
+//                )
+//            } else {
+//                mBluetoothManager!!.adapter.enable()
+//            }
+//        }
+//    }
 
     private inner class MyReceiver : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -190,38 +200,9 @@ class BackgroundLocationManager: MethodChannel.MethodCallHandler, PluginRegistry
                 intent.getParcelableExtra(LocationUpdatesService.EXTRA_LOCATION)
             }
             if (location != null) {
-                val locationMap = HashMap<String, Any>()
-                locationMap["latitude"] = location.latitude
-                locationMap["longitude"] = location.longitude
-                locationMap["altitude"] = location.altitude
-                locationMap["accuracy"] = location.accuracy.toDouble()
-                locationMap["bearing"] = location.bearing.toDouble()
-                locationMap["speed"] = location.speed.toDouble()
-                locationMap["time"] = location.time.toDouble()
-                locationMap["is_mock"] = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    location.isMock
-                } else {
-                    @Suppress("DEPRECATION")
-                    location.isFromMockProvider
-                }
-                channel.invokeMethod("location", locationMap, null)
+                locationUpdateHandler.publishLocationUpdate(location)
             }
         }
     }
 
-    /**
-     * Handle the response from a permission request
-     * @return true if the result has been handled.
-     */
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray): Boolean {
-        Log.i(BackgroundLocationPlugin.TAG, "onRequestPermissionResult")
-        if (requestCode == REQUEST_PERMISSIONS_REQUEST_CODE) {
-            when {
-                grantResults.isEmpty() -> Log.i(BackgroundLocationPlugin.TAG, "User interaction was cancelled.")
-                grantResults[0] == PackageManager.PERMISSION_GRANTED -> service?.requestLocationUpdates()
-                else -> Toast.makeText(context, R.string.permission_denied_explanation, Toast.LENGTH_LONG).show()
-            }
-        }
-        return true
-    }
 }
