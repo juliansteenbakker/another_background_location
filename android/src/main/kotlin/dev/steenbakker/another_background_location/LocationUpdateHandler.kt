@@ -2,6 +2,7 @@ package dev.steenbakker.another_background_location
 
 import android.location.Location
 import android.os.Build
+import android.util.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.EventChannel
 
@@ -16,7 +17,7 @@ class LocationUpdateHandler(flutterPluginBinding: FlutterPlugin.FlutterPluginBin
         eventChannel.setStreamHandler(this)
     }
 
-    fun locationToMap(location: Location): Map<String, Any> {
+    private fun locationToMap(location: Location): Map<String, Any> {
         val locationMap = HashMap<String, Any>()
         locationMap["latitude"] = location.latitude
         locationMap["longitude"] = location.longitude
@@ -35,7 +36,9 @@ class LocationUpdateHandler(flutterPluginBinding: FlutterPlugin.FlutterPluginBin
     }
 
     fun publishLocationUpdate(location: Location) {
-        eventSink?.success(locationToMap(location))
+        val locationMap = locationToMap(location)
+        Log.d("ANDROID", "Sending location to flutter")
+        eventSink?.success(locationMap)
     }
 
     override fun onListen(event: Any?, eventSink: EventChannel.EventSink?) {

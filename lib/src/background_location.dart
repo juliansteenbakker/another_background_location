@@ -28,8 +28,15 @@ class BackgroundLocation {
     'dev.steenbakker.background_location/events',
   );
 
+  final receivetest = _eventChannel
+      .receiveBroadcastStream()
+      .distinct()
+      .map((event) {
+        return Location.fromJson(Map<String, dynamic>.from(event as Map));
+  });
+
   /// Start receiving location updated
-  static Future<void> startLocationService({double distanceFilter = 0.0,
+  Future<void> startLocationService({double distanceFilter = 0.0,
     bool forceAndroidLocationManager = false,}) =>
       _methodChannel.invokeMethod('start_location_service', <String, dynamic>{
         'distance_filter': distanceFilter,
@@ -50,7 +57,7 @@ class BackgroundLocation {
     }
   }
 
-  static Future<void> setAndroidConfiguration(int interval) async {
+  Future<void> setAndroidConfiguration(int interval) async {
     if (Platform.isAndroid) {
       return _methodChannel.invokeMethod('set_configuration', <String, dynamic>{
         'interval': interval.toString(),
@@ -61,11 +68,13 @@ class BackgroundLocation {
   }
 
   /// Get the current location once.
-  Future<Location> getCurrentLocation() async{
-    final location = await _methodChannel.invokeMethod('get_current_location') as Map<String, dynamic>;
+  Future<Location?> getCurrentLocation() async{
+    final location = await _methodChannel.invokeMapMethod<String, dynamic>('get_current_location');
+    if (location == null) {
+      return null;
+    }
     return Location.fromJson(location);
   }
-
 
   /// Register a function to receive location updates as long as the location
   /// service has started
@@ -91,18 +100,18 @@ class BackgroundLocation {
     }
   });
 
-  Stream<Location>? _locationState;
+  // Stream<Location>? _locationState;
 
-  /// Returns Stream of MTU updates.
-  Stream<Location> get onLocationUpdate {
-    _locationState ??= _eventChannel
-        .receiveBroadcastStream()
-        .cast<Map<String, dynamic>>()
-        .distinct()
-        .map((Map<String, dynamic> event) {
-          final location = Location.fromJson(event);
-          return location;
-    });
-    return _locationState!;
-  }
+  // /// Returns Stream of MTU updates.
+  // Stream<Location> get onLocationUpdate {
+  //   _locationState ??= _eventChannel
+  //       .receiveBroadcastStream()
+  //       .cast<Map<String, dynamic>>()
+  //       .distinct()
+  //       .map((Map<String, dynamic> event) {
+  //         final location = Location.fromJson(event);
+  //         return location;
+  //   });
+  //   return _locationState!;
+  // }
 }

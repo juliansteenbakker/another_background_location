@@ -115,11 +115,12 @@ class BackgroundLocationManager(private val context: Context, val locationUpdate
         if (!checkPermissions()) {
             requestPermissions()
         } else {
-            val location = service?.getCurrentLocation()
-            if (location == null) {
-                result.error("Location Failed", "Could not get location.", null)
-            } else {
-                result.success(locationToMap(location))
+            service?.getCurrentLocation { location: Location? ->
+                if (location == null) {
+                    result.error("Location Failed", "Could not get location.", null)
+                } else {
+                    result.success(locationToMap(location))
+                }
             }
         }
     }

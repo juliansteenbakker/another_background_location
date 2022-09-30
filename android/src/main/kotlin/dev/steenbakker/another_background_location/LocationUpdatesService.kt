@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.location.*
 import android.location.LocationListener
 import android.os.*
+import androidx.annotation.NonNull
 import androidx.core.app.NotificationCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.common.*
@@ -168,15 +169,14 @@ class LocationUpdatesService : Service() {
     }
 
 
-    fun getCurrentLocation(): Location? {
-        return try {
+    fun getCurrentLocation(onLocation: (Location?) -> Unit) {
+        try {
             if (isGoogleApiAvailable && !this.forceLocationManager) {
-                mFusedLocationClient!!.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).result
+                mFusedLocationClient!!.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).addOnSuccessListener(onLocation)
             } else {
-                mLocationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER)
+                onLocation(mLocationManager?.getLastKnownLocation(LocationManager.GPS_PROVIDER))
             }
-        } catch (unlikely: SecurityException) {
-            null
+        } catch (_: SecurityException) {
         }
     }
 

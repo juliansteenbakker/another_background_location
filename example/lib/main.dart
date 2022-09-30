@@ -36,7 +36,7 @@ class _MyAppState extends State<MyApp> {
             children: <Widget>[
               Text('STREAM INFO: '),
               StreamBuilder(
-                stream: BackgroundLocation().onLocationUpdate,
+                stream: BackgroundLocation().receivetest,
                 // initialData: PeripheralState.unknown,
                 builder:
                     (BuildContext context, AsyncSnapshot<Location> snapshot) {
@@ -84,7 +84,7 @@ class _MyAppState extends State<MyApp> {
                       icon: '@mipmap/ic_launcher',
                     );
                     //await BackgroundLocation.setAndroidConfiguration(1000);
-                    await BackgroundLocation.startLocationService();
+                    await BackgroundLocation().startLocationService();
                     BackgroundLocation().getLocationUpdates((location) {
                       setState(() {
                         latitude = location.latitude.toString();
