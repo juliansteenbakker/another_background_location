@@ -7,25 +7,22 @@
 
 import Foundation
 
-public class LocationDelegate: NSObject, FlutterStreamHandler {
+public class LocationHandler: NSObject, FlutterStreamHandler {
     
     private var eventSink: FlutterEventSink?
     
     private let eventChannel: FlutterEventChannel
     
     init(registrar: FlutterPluginRegistrar) {
-        eventChannel = FlutterEventChannel(name: "dev.steenbakker.flutter_ble_central/scan_result",
+        eventChannel = FlutterEventChannel(name: "dev.steenbakker.background_location/events",
                                                binaryMessenger: registrar.messenger())
         super.init()
         eventChannel.setStreamHandler(self)
     }
     
-    func publishScanResult() {
+    func publishScanResult(location: [String : Any]) {
         if let eventSink = self.eventSink {
-//            let deviceDiscoveryMessage = [
-//                "rssi": Int32(rssi),
-//            ] as [String : Any]
-//            eventSink(deviceDiscoveryMessage)
+            eventSink(location)
         }
     }
     

@@ -11,14 +11,28 @@ import UIKit
 import CoreLocation
 
 public class AnotherBackgroundLocationManager: NSObject, CLLocationManagerDelegate {
+    private let locationManager = CLLocationManager()
     
-    static var locationManager: CLLocationManager = CLLocationManager()
+//    let locationManager: CLLocationManager? = nil
+    let locationHandler: LocationHandler
     
-    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        if status == .authorizedAlways {
-           
-        }
+    init(locationHandler: LocationHandler) {
+        self.locationHandler = locationHandler
+        locationManager.requestAlwaysAuthorization()
+        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.distanceFilter = kCLDistanceFilterNone
+        locationManager.desiredAccuracy = kCLLocationAccuracyBest
+        locationManager.activityType = .other
+        super.init()
+        locationManager.delegate = self
     }
+    
+//    public func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+//        if status == .authorizedAlways {
+//
+//        }
+//    }
     
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         let location = [
@@ -31,7 +45,37 @@ public class AnotherBackgroundLocationManager: NSObject, CLLocationManagerDelega
             "time": locations.last!.timestamp.timeIntervalSince1970 * 1000,
             "is_mock": false
         ] as [String : Any]
+        locationHandler.publishScanResult(location: location)
+    }
+    
+    
+    public func getLocation(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        locationManager.delegate = self
+        locationManager.requestAlwaysAuthorization()
 
-        SwiftBackgroundLocationPlugin.channel?.invokeMethod("location", arguments: location)
+        locationManager.allowsBackgroundLocationUpdates = true
+        if #available(iOS 11.0, *) {
+            locationManager.showsBackgroundLocationIndicator = true;
+        }
+        locationManager.pausesLocationUpdatesAutomatically = false
+        result(true)
+    }
+    
+    func startLocationService(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+        let args = call.arguments as? Dictionary<String, Any>
+        let distanceFilter = args?["distance_filter"] as? Double
+        self.locationManager.delegate = self
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.requestAlwaysAuthorization()
+        
+        locationManager.distanceFilter = distanceFilter ?? 0
+
+        locationManager.startUpdatingLocation()
+        result(nil)
+    }
+    
+    func stopLocationService(_ result: @escaping FlutterResult) {
+        locationManager.stopUpdatingLocation()
+        result(nil)
     }
 }
