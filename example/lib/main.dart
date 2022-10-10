@@ -1,5 +1,6 @@
 import 'package:another_background_location/another_background_location.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 void main() => runApp(MyApp());
 
@@ -122,6 +123,15 @@ class _MyAppState extends State<MyApp> {
                     });
                   },
                   child: Text('Get Current Location')),
+              GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(37.42796133580664, -122.085749655962),
+                  zoom: 14.4746,
+                ),
+                onMapCreated: (GoogleMapController controller) {
+                  // _controller.complete(controller);
+                },
+              )
             ],
           ),
         ),
